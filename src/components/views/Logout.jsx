@@ -6,7 +6,7 @@ export default function Logout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // TODO run logout function to clear session token
+    sessionStorage.removeItem('session_token');
     navigate("/login");
   }, [navigate]);
 

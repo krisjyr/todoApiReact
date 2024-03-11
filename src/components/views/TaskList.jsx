@@ -1,24 +1,27 @@
 import { DeleteOutlined } from "@ant-design/icons";
 import { Input, Button, Checkbox, List, Col, Row, Space, Divider } from "antd";
 import produce from "immer";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from "react-router";
 
 
 export default function TaskList() {
-    const [updatedData, setUpdatedData] = useState('');
-    const [newData, setNewData] = useState('');
+    const token = sessionStorage.getItem('session_token');
     const [tasks, setTasks] = useState([]);
+    const navigate = useNavigate();
 
-    async function getUser(endpoint) {
+     async function getUser(endpoint) {
         try {
             const response = await axios.get(endpoint, {
                 headers: {
-                    Authorization: `Bearer mEIRaj1fMtVmD6vOwdZHlHnohr4bDWRd`,
+                    Authorization: `Bearer ${token}`,
                 },
             });
             let tasks = [];
-            for (const data of response.data) {
+            const damn = response
+            console.log(damn)
+            for (const data of damn.data) {
                 tasks.push({ id: data.id, name: data.title, completed: data.marked_as_done });
             }
 
@@ -29,23 +32,30 @@ export default function TaskList() {
         }
     }
 
-    getUser('http://demo2.z-bit.ee/tasks');
-
-    async function handleUpdate() {
-        try {
-            await axios.put('https://api.example.com/data/1', { updatedData });
-            alert('Data updated successfully!');
-            // Optionally, fetch and update the displayed data
-        } catch (error) {
-            console.error('Error updating data:', error);
+    useEffect(() => {
+        if (!token) {
+            return navigate("/login");
         }
-    };
+        getUser('http://demo2.z-bit.ee/tasks');
+    }, [token]);
 
     const handleNameChange = (task, event) => {
         console.log(event)
         const newTasks = produce(tasks, draft => {
             const index = draft.findIndex(t => t.id === task.id);
             draft[index].name = event.target.value;
+
+            try {
+                axios.put(`http://demo2.z-bit.ee/tasks/${task.id}`, {
+                    title: draft[index].name,
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+            } catch (error) {
+                console.error(error);
+            }
         });
         setTasks(newTasks);
     };
@@ -55,6 +65,18 @@ export default function TaskList() {
         const newTasks = produce(tasks, draft => {
             const index = draft.findIndex(t => t.id === task.id);
             draft[index].completed = event.target.checked;
+
+            try {
+                axios.put(`http://demo2.z-bit.ee/tasks/${task.id}`, {
+                    marked_as_done: draft[index].completed
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+            } catch (error) {
+                console.error(error);
+            }
         });
         setTasks(newTasks);
     };
@@ -69,7 +91,7 @@ export default function TaskList() {
                 },
                 {
                     headers: {
-                        Authorization: `Bearer mEIRaj1fMtVmD6vOwdZHlHnohr4bDWRd`,
+                        Authorization: `Bearer ${token}`,
                     },
                 })
                 .then(response => {
@@ -100,7 +122,7 @@ export default function TaskList() {
                 axios.delete(`http://demo2.z-bit.ee/tasks/${task.id}`,
                     {
                         headers: {
-                            Authorization: `Bearer mEIRaj1fMtVmD6vOwdZHlHnohr4bDWRd`,
+                            Authorization: `Bearer ${token}`,
                         },
                     })
                 alert('Data deleted successfully!');
@@ -110,6 +132,10 @@ export default function TaskList() {
             }
         }));
     };
+
+    const logout = async () => {
+        navigate("/logout");
+    }
 
     return (
         <Row type="flex" justify="center" style={{ minHeight: '100vh', marginTop: '6rem' }}>
@@ -132,6 +158,7 @@ export default function TaskList() {
                     </List.Item>}
                 />
             </Col>
+            <Button type="primary" onClick={() => logout()}>Logout</Button>
         </Row>
     )
 }
