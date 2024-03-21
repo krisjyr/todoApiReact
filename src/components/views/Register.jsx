@@ -32,11 +32,11 @@ export default function Login() {
             if (response.status == 422) {
                 alert(response.data[0].message)
                 return;
-            } else {
-                sessionStorage.setItem('session_token', response.data.access_token);
-
-                navigate("/");
             }
+            sessionStorage.setItem('session_token', response.data.access_token);
+
+            navigate("/");
+
             // Save the token securely (e.g., in local storage)
         } catch (error) {
             console.error('Login failed:', error);
