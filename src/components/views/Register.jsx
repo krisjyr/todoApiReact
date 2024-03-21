@@ -7,30 +7,40 @@ export default function Login() {
     const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [confPassword, setConfPassword] = useState('');
     const token = sessionStorage.getItem('session_token');
 
-    const handleLogin = async () => {
+    const handleRegister = async () => {
+
+        if (password !== confPassword) {
+            alert("Passwords do not match")
+            return;
+        }
+
         try {
-            const response = await axios.post('http://demo2.z-bit.ee/users/get-token', {
-                username,
-                password,
-            },{
+            const response = await axios.post('http://demo2.z-bit.ee/users', {
+                "username": username,
+                "firstname": "test",
+                "lastname": "test",
+                "newPassword": password,
+            }, {
                 validateStatus: function (status) {
                     return status < 500; // Resolve only if the status code is less than 500
                 }
             });
 
-            if (response.status == 400) {
-                alert(response.data.message)
+            if (response.status == 422) {
+                alert(response.data[0].message)
                 return;
+            } else {
+                sessionStorage.setItem('session_token', response.data.access_token);
+
+                navigate("/");
             }
-
-            sessionStorage.setItem('session_token', response.data.access_token);
-
-            navigate("/");
             // Save the token securely (e.g., in local storage)
         } catch (error) {
             console.error('Login failed:', error);
+
         }
     };
 
@@ -40,19 +50,19 @@ export default function Login() {
         }
     }, [token]);
 
-    const register = async () => {
-        navigate("/register");
+    const login = async () => {
+        navigate("/login");
     }
 
     return (
         <Row type="flex" justify="center" align="middle" style={{ minHeight: '100vh' }}>
             <Col span={4}>
-                <h1>Login</h1>
+                <h1>Register</h1>
                 <Form
                     name="basic"
                     layout="vertical"
-                    initialValues={{ username: "", password: "" }}
-                    onFinish={handleLogin}
+                    initialValues={{ username: "", password: "", confPassword: "" }}
+                    onFinish={handleRegister}
                 >
                     <Form.Item
                         label="Username"
@@ -74,10 +84,20 @@ export default function Login() {
                     >
                         <Input.Password />
                     </Form.Item>
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit">Login</Button>
+                    <Form.Item
+                        label="Confirm Password"
+                        name="confPassword"
+                        type="password"
+                        value={confPassword}
+                        onChange={(e) => setConfPassword(e.target.value)}
+                        rules={[{ required: true, message: 'Please input your password!' }]}
+                    >
+                        <Input.Password />
                     </Form.Item>
-                    <a onClick={() => register()}>Don't have an accont? Register now!</a>
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit">Register</Button>
+                    </Form.Item>
+                    <a onClick={() => login()}>Already have an account? Login here</a>
                 </Form>
             </Col>
         </Row>
